@@ -51,8 +51,8 @@ def main():
             info = None 
 
         # VERIFICAICON DE LA INFO Q LE ENTRA AL MODELO
-        print("Informacion que entra al modelo para generar la consulta:")
-        print(info)
+        #print("Informacion que entra al modelo para generar la consulta:")
+        #print(info)
         
         # 4. Generación SQL (Le pasamos la data masticada a Llama)
         print("   🧠 Generando consulta SQL...")
@@ -95,14 +95,13 @@ def main():
         print(respuesta_final)
         print("="*40)
         
-        # Opcional: Mostrar tabla de datos crudos si la opción B lo requiere
+        # Mostrar tabla de datos crudos 
         if df_mostrar is not None:
             print("\nDetalle de Datos - Tabla Fuente")
             print(df_mostrar.to_string(index=False))
             print("="*40)
-        # -----------------------------------------------------
-        # PASO 5: Guardar en Memoria
-        # -----------------------------------------------------
+        
+        # 7.: Guardar en Memoria 
         historial.append(f"Usuario: {pregunta}")
         historial.append(f"Asistente (Datos encontrados): {datos_para_ia}")
 
