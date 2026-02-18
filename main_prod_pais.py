@@ -37,24 +37,20 @@ def main():
 
             if match_prod['score_prod'] > match_pais['score_pais']:
                 print(f"   🔍 Producto detectado: {match_prod['nombre_prod']} (Confianza: {match_prod['score_prod']:.2f})")
-                print(match_prod)
+                
                 info = match_prod
                 info['tipo']="producto"
             
             else:
                 print(f"   🔍 Pais detectado: {match_pais['nombre_pais']} (Confianza: {match_pais['score_pais']:.2f})")
-                print(match_pais)
+                
                 info= match_pais
                 info['tipo']="pais"
                 
         
         else:
             print(f"   🌐 Pregunta General detectada (Score bajo: {match_pais['score_pais']:.2f} para paises, y {match_prod['score_prod']:.2f} para productos). Buscando en toda la base.")
-            print("info paises:")
-            print(match_pais)
-            print("_--------------")
-            print("info producto:")
-            print(match_prod)
+
             info = None 
 
         # VERIFICAICON DE LA INFO Q LE ENTRA AL MODELO
