@@ -73,8 +73,8 @@ def generar_sql_llama3(pregunta_usuario, historial,info=None):
             contexto = f"""
                             CONTEXTO: El usuario pregunta por el PAÍS: "{info['nombre_pais']}" cuyo ID: {info['id_pais']}).
                             INSTRUCCIÓN OBLIGATORIA: 
-                            - Si preguntan sobre IMPORTACIONES de este país -> 'WHERE id_pais_importador = {info['id']}'
-                            - Si preguntan sobre EXPORTACIONES de este país -> 'WHERE id_pais_exportador = {info['id']}'
+                            - Si preguntan sobre IMPORTACIONES de este país -> 'WHERE id_pais_importador = {info['id_pais']}'
+                            - Si preguntan sobre EXPORTACIONES de este país -> 'WHERE id_pais_exportador = {info['id_pais']}'
                             - Usa la lógica de la pregunta para decidir cuál columna usar.
                             """
     else:

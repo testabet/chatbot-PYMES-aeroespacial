@@ -13,7 +13,7 @@ def conectarse():
             host="localhost",
             user=os.getenv("DB_user"),
             passwd=os.getenv("DB_pass"), 
-            database= "importaciones_aeroesp_2023", # PARA CONECTARSE DIRECTAMENTE A LA DB  
+            database= "importaciones_aeroesp_2024", # PARA CONECTARSE DIRECTAMENTE A LA DB  
         )
         return conexion
 

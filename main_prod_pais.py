@@ -9,7 +9,7 @@ from collections import deque
 load_dotenv()
 
 # --- CONFIGURACIÓN ---
-UMBRAL_CONFIANZA = 0.55  # Si el score es menor a esto, es pregunta general
+UMBRAL_CONFIANZA = 0.56  # Si el score es menor a esto, es pregunta general
 MAX_HISTORIAL = 3        # Guardamos 3 pares de preguntas/respuestas
 
 def main():
@@ -33,21 +33,28 @@ def main():
         match_prod,match_pais = buscador.buscar_producto_pais(pregunta)
         info = None
 
-        if max(match_prod['score_prod'],match_pais['score_pais']) >= UMBRAL_CONFIANZA:
+        if max(match_prod['score_prod'],match_pais['score_pais']) > UMBRAL_CONFIANZA:
 
-            if match_prod['score_prod'] >= match_pais['score_pais']:
+            if match_prod['score_prod'] > match_pais['score_pais']:
                 print(f"   🔍 Producto detectado: {match_prod['nombre_prod']} (Confianza: {match_prod['score_prod']:.2f})")
+                print(match_prod)
                 info = match_prod
                 info['tipo']="producto"
             
             else:
                 print(f"   🔍 Pais detectado: {match_pais['nombre_pais']} (Confianza: {match_pais['score_pais']:.2f})")
+                print(match_pais)
                 info= match_pais
                 info['tipo']="pais"
                 
         
         else:
             print(f"   🌐 Pregunta General detectada (Score bajo: {match_pais['score_pais']:.2f} para paises, y {match_prod['score_prod']:.2f} para productos). Buscando en toda la base.")
+            print("info paises:")
+            print(match_pais)
+            print("_--------------")
+            print("info producto:")
+            print(match_prod)
             info = None 
 
         # VERIFICAICON DE LA INFO Q LE ENTRA AL MODELO
