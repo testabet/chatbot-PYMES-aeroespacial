@@ -1,0 +1,6 @@
+sentence-transformers
+pandas
+scikit-learn
+mysql-connector-python
+groq
+dotenv
