@@ -5,10 +5,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class BuscadorDeProductos:
-    def __init__(self):
+    def __init__(self,model):
         print("Cargando modelo de embeddings (esto toma unos segundos)...")
         # Modelo ligero multilingüe para entender español
-        self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        
+        self.model = SentenceTransformer(model)
         self.productos_df = None
         self.paises_df = None
         self.embeddings_productos = None
@@ -46,11 +47,15 @@ class BuscadorDeProductos:
         similitudes_productos = cosine_similarity(vector_usuario, self.embeddings_productos)
         similitudes_paises = cosine_similarity(vector_usuario, self.embeddings_paises)
         
+        #similitudes_productos = self.model.similarity(vector_usuario, self.embeddings_productos)
+        #similitudes_paises = self.model.similarity(vector_usuario, self.embeddings_paises)
+        
+        
         # Obtenemos el indice y confianza del que obtuvo la mayor similitud
-        indice_prod = similitudes_productos.argmax()
+        indice_prod = similitudes_productos[0].argmax()
         score_prod = similitudes_productos[0][indice_prod]
 
-        indice_pais = similitudes_paises.argmax()
+        indice_pais = similitudes_paises[0].argmax()
         score_pais = similitudes_paises[0][indice_pais]
 
         # Seleccionamos el pais y producto con los indices anteriores
@@ -59,27 +64,36 @@ class BuscadorDeProductos:
         
         return ({
             'id_prod': mejor_match_prod['id_producto'],
-            'codigo_prod': mejor_match_prod['codigo_sitc'],
+            'codigo_SITC_prod': mejor_match_prod['codigo_sitc'],
             'nombre_prod': mejor_match_prod['nombre_producto'],
             'score_prod': score_prod}, {
             'id_pais': mejor_match_pais['id_pais'],
-            'codigo_pais': mejor_match_pais['codigo_ISO'],
+            'codigo_ISO_pais': mejor_match_pais['codigo_ISO'],
             'nombre_pais': mejor_match_pais['nombre'],
             'score_pais': score_pais,            
                 })
 
 
 def main():
-    buscador=BuscadorDeProductos()
-    buscador._cargar_productos_pais_desde_sql()
-
-    pregunta= "cuanto importo brasil de neumaticos?"
-    producto,pais = buscador.buscar_producto_pais(pregunta)
-    if producto['score_prod'] > pais['score_pais']:       
-        print(f"   🔍 Entendí que hablas de: {producto['nombre_prod']} (Confianza: {producto['score_prod']:.2f})")
-    else: 
-        print(f"   🔍 Entendí que hablas de: {pais['nombre_pais']} (Confianza: {pais['score_pais']:.2f})")
     
+    modelos=['paraphrase-multilingual-MiniLM-L12-v2','distiluse-base-multilingual-cased-v1']
+    preguntas=['pais que mas importo aeronaves de menos de 2000kg',
+               'pais que mas exporto aeronaves de mas de 15000kg',
+               'total de los productos importados por canada',
+               
+               ]
+    for model in modelos:
+        
+        buscador=BuscadorDeProductos(model)
+        print(f"-------EVALUACIONES DEL MODELO {model}---------------------") 
+        for pregunta in preguntas:
+            producto,pais = buscador.buscar_producto_pais(pregunta)
+            print(pregunta)
+            if producto['score_prod'] > pais['score_pais']:       
+                print(f"   🔍 Entendí que hablas de: {producto['nombre_prod']} (Confianza: {producto['score_prod']:.2f})")
+            else: 
+                print(f"   🔍 Entendí que hablas de: {pais['nombre_pais']} (Confianza: {pais['score_pais']:.2f})")
+        
     return
 
 

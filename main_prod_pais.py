@@ -1,5 +1,4 @@
 import pandas as pd
-import os
 from dotenv import load_dotenv
 from busqueda_semantica_productos_paises import BuscadorDeProductos
 from sql_llama3_pais_prod import generar_sql_llama3,generar_respuesta_final
@@ -9,7 +8,7 @@ from collections import deque
 load_dotenv()
 
 # --- CONFIGURACIÓN ---
-UMBRAL_CONFIANZA = 0.56  # Si el score es menor a esto, es pregunta general
+UMBRAL_CONFIANZA = 0.55  # Si el score es menor a esto, es pregunta general
 MAX_HISTORIAL = 3        # Guardamos 3 pares de preguntas/respuestas
 
 def main():
@@ -37,20 +36,17 @@ def main():
 
             if match_prod['score_prod'] > match_pais['score_pais']:
                 print(f"   🔍 Producto detectado: {match_prod['nombre_prod']} (Confianza: {match_prod['score_prod']:.2f})")
-                
                 info = match_prod
                 info['tipo']="producto"
             
             else:
                 print(f"   🔍 Pais detectado: {match_pais['nombre_pais']} (Confianza: {match_pais['score_pais']:.2f})")
-                
                 info= match_pais
                 info['tipo']="pais"
                 
         
         else:
-            print(f"   🌐 Pregunta General detectada (Score bajo: {match_pais['score_pais']:.2f} para paises, y {match_prod['score_prod']:.2f} para productos). Buscando en toda la base.")
-
+            print(f"   🌐 Pregunta General detectada (Score bajo: {match_pais['score_pais']:.2f} para {match_pais['nombre_pais']} , y {match_prod['score_prod']:.2f} para {match_prod['nombre_prod']}). Buscando en toda la base.")
             info = None 
 
         # VERIFICAICON DE LA INFO Q LE ENTRA AL MODELO
@@ -63,7 +59,7 @@ def main():
         print(f"   💻 SQL: {sql}")
 
         # 5. Ejecución
-        datos_para_ia = "No se encontraron datos."
+        datos_sql = "No se encontraron datos."
         df_mostrar = None
         
         conn = conectarse()
@@ -73,25 +69,25 @@ def main():
                 cursor.execute(sql)
                 filas = cursor.fetchall()
                 cols = [d[0] for d in cursor.description]
-                
+
                 if filas:
                     df = pd.DataFrame(filas, columns=cols)
                     df_mostrar = df # Guardamos para mostrar la tabla al final
                     # Convertimos el DF a string para que la IA lo lea
-                    datos_para_ia = df.to_string(index=False)
+                    datos_sql = df.to_string(index=False)
                     
                 else:
-                    print("\n🤷‍♂️ La consulta es válida, pero no arrojó datos (0 resultados).")
+                    print("\n La consulta es válida, pero no arrojó datos (0 resultados).")
             
             except Exception as e:
                 print(f"\n❌ Error SQL: {e}")
-                datos_para_ia = f"Error al ejecutar SQL: {e}"
+                datos_sql = f"Error al ejecutar SQL: {e}"
             finally:
                 conn.close()
 
 
         #6. Generacion de respuesta final
-        respuesta_final = generar_respuesta_final(pregunta, datos_para_ia)
+        respuesta_final = generar_respuesta_final(pregunta, datos_sql,info)
         
         print("\n" + "="*40)
         print("RESPUESTA:")
@@ -106,7 +102,8 @@ def main():
         
         # 7.: Guardar en Memoria 
         historial.append(f"Usuario: {pregunta}")
-        historial.append(f"Asistente (Datos encontrados): {datos_para_ia}")
+        historial.append(f"Asistente (Datos encontrados): {datos_sql}")
+        historial.append(f"Respuesta generada:{respuesta_final}")
 
 if __name__ == "__main__":
     main()
