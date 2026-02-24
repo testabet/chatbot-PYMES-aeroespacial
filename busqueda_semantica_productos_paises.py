@@ -5,11 +5,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class BuscadorDeProductos:
-    def __init__(self,model):
+    def __init__(self):
         print("Cargando modelo de embeddings (esto toma unos segundos)...")
         # Modelo ligero multilingüe para entender español
-        
-        self.model = SentenceTransformer(model)
+    
+        self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
         self.productos_df = None
         self.paises_df = None
         self.embeddings_productos = None
@@ -77,7 +77,19 @@ class BuscadorDeProductos:
 def main():
     
     modelos=['paraphrase-multilingual-MiniLM-L12-v2','distiluse-base-multilingual-cased-v1']
-    preguntas=['pais que mas importo aeronaves de menos de 2000kg',
+    preguntas=['importaciones realizadas por brasil',
+               'total importaciones de neumaticos',
+               'valor total de helicopteros importados por francia',
+               'productos importados por francia desde argentina',
+               'total de importaciones de motores',
+               'importaciones realizadas por estados unidos',
+               'total importaciones de ruedas',
+               'total de importacion de ruedas de aviones',
+               'top 3 productos exportados por suiza',
+               'total de importaciones de motores de avion',
+               'total de importacion de ruedas para aviones',
+               'total de importacion de neumaticos para avion',
+               'pais que mas importo aeronaves de menos de 2000kg',
                'pais que mas exporto aeronaves de mas de 15000kg',
                'total de los productos importados por canada',
                
