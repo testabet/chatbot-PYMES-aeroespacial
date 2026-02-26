@@ -7,8 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 class BuscadorDeProductos:
     def __init__(self):
         print("Cargando modelo de embeddings (esto toma unos segundos)...")
-        # Modelo ligero multilingüe para entender español
-    
+
         self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
         self.productos_df = None
         self.paises_df = None
@@ -63,14 +62,14 @@ class BuscadorDeProductos:
         mejor_match_pais = self.paises_df.iloc[indice_pais]
         
         return ({
-            'id_prod': mejor_match_prod['id_producto'],
-            'codigo_SITC_prod': mejor_match_prod['codigo_sitc'],
-            'nombre_prod': mejor_match_prod['nombre_producto'],
-            'score_prod': score_prod}, {
-            'id_pais': mejor_match_pais['id_pais'],
-            'codigo_ISO_pais': mejor_match_pais['codigo_ISO'],
-            'nombre_pais': mejor_match_pais['nombre'],
-            'score_pais': score_pais,            
+            'id_prod': int(mejor_match_prod['id_producto']),
+            'codigo_SITC_prod': int(mejor_match_prod['codigo_sitc']),
+            'nombre_prod': str(mejor_match_prod['nombre_producto']),
+            'score_prod': float(score_prod)}, {
+            'id_pais': int(mejor_match_pais['id_pais']),
+            'codigo_ISO_pais': str(mejor_match_pais['codigo_ISO']),
+            'nombre_pais': str(mejor_match_pais['nombre']),
+            'score_pais': float(score_pais),            
                 })
 
 

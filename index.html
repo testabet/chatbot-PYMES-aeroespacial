@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chatbot PYMES Aeroespacial</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Scrollbar suave (opcional) */
+    .nice-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .nice-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,.55); border-radius: 999px; }
+    .nice-scroll::-webkit-scrollbar-track { background: rgba(148,163,184,.15); border-radius: 999px; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <!-- Background glow -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden">
+    <div class="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-[120px]"></div>
+    <div class="absolute -bottom-40 right-10 h-[520px] w-[520px] rounded-full bg-emerald-500/15 blur-[120px]"></div>
+  </div>
+
+  <div class="relative mx-auto max-w-6xl px-4 py-6">
+    <!-- Top bar -->
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Cambiá este bloque por tu logo si querés -->
+        <div class="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+          <span class="text-xl">🚀</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight">Chatbot PYMES — Aeroespacial</h1>
+          <p class="text-sm text-slate-300">Asistente para consultas de productos, mercados y oportunidades.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btnReset"
+          class="rounded-xl bg-white/10 px-3 py-2 text-sm font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/15">
+          Reiniciar
+        </button>
+        <button id="btnExport"
+          class="rounded-xl bg-white/10 px-3 py-2 text-sm font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/15">
+          Exportar chat
+        </button>
+        <span id="statusPill"
+          class="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm ring-1 ring-emerald-400/20">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-emerald-200">Listo</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_360px]">
+      <!-- Chat panel -->
+      <section class="rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
+        <!-- Suggestions -->
+        <div class="border-b border-white/10 p-4">
+          <p class="text-sm text-slate-300">Sugerencias rápidas</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button class="chip" data-q="¿Qué productos aeroespaciales exporta Argentina hoy?">Productos exportados 🇦🇷</button>
+            <button class="chip" data-q="Dame 5 países con alta demanda para piezas aeronáuticas y por qué.">Top mercados 🌍</button>
+            <button class="chip" data-q="Tengo una PyME metalmecánica, ¿cómo entro a la cadena aeroespacial?">Cómo entrar 🧩</button>
+            <button class="chip" data-q="¿Qué certificaciones suelen pedir para proveedores aeroespaciales?">Certificaciones ✅</button>
+          </div>
+          <div class="mt-3 text-xs text-slate-400">
+            Tip: si tu backend devuelve <b>fuentes</b>, las muestro en la columna derecha.
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="chatScroll" class="nice-scroll h-[58vh] overflow-y-auto p-4 md:h-[62vh]">
+          <!-- Messages injected here -->
+        </div>
+
+        <!-- Composer -->
+        <div class="border-t border-white/10 p-4">
+          <form id="chatForm" class="flex items-end gap-2">
+            <div class="flex-1">
+              <label class="sr-only" for="msg">Mensaje</label>
+              <textarea id="msg" rows="1"
+                class="nice-scroll max-h-40 w-full resize-none rounded-2xl bg-slate-900/60 px-4 py-3 text-slate-100 ring-1 ring-white/10 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                placeholder="Escribí tu consulta… (Enter para enviar, Shift+Enter para salto)"></textarea>
+              <div class="mt-1 flex items-center justify-between text-xs text-slate-400">
+                <span id="hint">Enter = enviar · Shift+Enter = nueva línea</span>
+                <span id="charCount">0</span>
+              </div>
+            </div>
+
+            <button id="sendBtn" type="submit"
+              class="inline-flex h-12 items-center justify-center rounded-2xl bg-indigo-500 px-4 font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-400 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
+              Enviar
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Side panel -->
+      <aside class="rounded-3xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
+        <div class="border-b border-white/10 p-4">
+          <h2 class="text-sm font-semibold text-slate-100">Contexto / Fuentes</h2>
+          <p class="mt-1 text-xs text-slate-400">
+            Si tu API devuelve <code class="rounded bg-white/10 px-1">sources</code>, aparecen acá.
+          </p>
+        </div>
+
+        <div class="nice-scroll max-h-[72vh] overflow-y-auto p-4">
+          <div class="rounded-2xl bg-slate-900/40 p-4 ring-1 ring-white/10">
+            <p class="text-sm text-slate-200">Estado conexión</p>
+            <p id="apiInfo" class="mt-2 text-xs text-slate-400 break-all"></p>
+          </div>
+
+          <div class="mt-4">
+            <p class="text-sm font-semibold text-slate-100">Últimas fuentes</p>
+            <div id="sourcesBox" class="mt-2 grid gap-2">
+              <div class="rounded-2xl bg-white/5 p-3 text-xs text-slate-400 ring-1 ring-white/10">
+                Todavía no hay fuentes.
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <p class="text-sm font-semibold text-slate-100">Acciones</p>
+            <div class="mt-2 grid gap-2">
+              <button id="btnCopyLast"
+                class="rounded-2xl bg-white/10 px-3 py-2 text-sm font-medium ring-1 ring-white/10 hover:bg-white/15">
+                Copiar última respuesta
+              </button>
+              <button id="btnTheme"
+                class="rounded-2xl bg-white/10 px-3 py-2 text-sm font-medium ring-1 ring-white/10 hover:bg-white/15">
+                Alternar modo (oscuro/claro)
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 text-xs text-slate-500">
+            <p class="leading-relaxed">
+              Backend esperado (ejemplo): <br/>
+              <code class="rounded bg-white/10 px-1">POST /api/chat</code> con
+              <code class="rounded bg-white/10 px-1">{ message, history }</code> → retorna
+              <code class="rounded bg-white/10 px-1">{ answer, sources? }</code>.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * CONFIG
+     ***********************/
+    // Cambiá esto por tu endpoint real:
+    // - local: "http://127.0.0.1:8000/api/chat"
+    // - prod:  "https://tu-dominio.com/api/chat"
+    const API_URL = "http://127.0.0.1:8000/api/chat";
+
+    // Storage keys
+    const LS_KEY = "pymes_chat_history_v1";
+    const LS_THEME = "pymes_chat_theme_v1";
+
+    /***********************
+     * DOM
+     ***********************/
+    const chatScroll = document.getElementById("chatScroll");
+    const chatForm = document.getElementById("chatForm");
+    const msgEl = document.getElementById("msg");
+    const sendBtn = document.getElementById("sendBtn");
+    const statusPill = document.getElementById("statusPill");
+    const sourcesBox = document.getElementById("sourcesBox");
+    const apiInfo = document.getElementById("apiInfo");
+    const charCount = document.getElementById("charCount");
+
+    const btnReset = document.getElementById("btnReset");
+    const btnExport = document.getElementById("btnExport");
+    const btnCopyLast = document.getElementById("btnCopyLast");
+    const btnTheme = document.getElementById("btnTheme");
+
+    apiInfo.textContent = API_URL;
+
+    /***********************
+     * STATE
+     ***********************/
+    let messages = loadHistory(); // [{role:'user'|'assistant'|'system', content:string, ts:number}]
+    let lastAssistantText = "";
+
+    /***********************
+     * UTIL
+     ***********************/
+    function setStatus(type, text) {
+      // type: ready | loading | error
+      const pill = statusPill;
+      const dot = pill.querySelector("span");
+      const label = pill.querySelectorAll("span")[1];
+
+      pill.className = "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm ring-1";
+      dot.className = "h-2 w-2 rounded-full";
+      label.textContent = text;
+
+      if (type === "ready") {
+        pill.classList.add("bg-emerald-500/10","ring-emerald-400/20");
+        dot.classList.add("bg-emerald-400");
+        label.className = "text-emerald-200";
+      } else if (type === "loading") {
+        pill.classList.add("bg-indigo-500/10","ring-indigo-400/20");
+        dot.classList.add("bg-indigo-400");
+        label.className = "text-indigo-200";
+      } else {
+        pill.classList.add("bg-rose-500/10","ring-rose-400/20");
+        dot.classList.add("bg-rose-400");
+        label.className = "text-rose-200";
+      }
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function nowTs() { return Date.now(); }
+
+    function saveHistory() {
+      localStorage.setItem(LS_KEY, JSON.stringify(messages));
+    }
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return [{
+          role: "assistant",
+          content: "Hola 👋 Soy tu asistente para PYMES del sector aeroespacial. Contame qué querés analizar (producto, país, demanda, certificaciones, etc.)",
+          ts: nowTs()
+        }];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("empty");
+        return parsed;
+      } catch {
+        return [{
+          role: "assistant",
+          content: "Hola 👋 Soy tu asistente para PYMES del sector aeroespacial. Contame qué querés analizar (producto, país, demanda, certificaciones, etc.)",
+          ts: nowTs()
+        }];
+      }
+    }
+
+    function scrollToBottom() {
+      chatScroll.scrollTop = chatScroll.scrollHeight;
+    }
+
+    function autoGrow(el) {
+      el.style.height = "auto";
+      el.style.height = Math.min(el.scrollHeight, 160) + "px";
+    }
+
+    function render() {
+      chatScroll.innerHTML = messages.map(m => renderBubble(m)).join("");
+      scrollToBottom();
+    }
+
+    function renderBubble(m) {
+      const isUser = m.role === "user";
+      const isAssistant = m.role === "assistant";
+      const align = isUser ? "justify-end" : "justify-start";
+      const bubbleBase = "max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed ring-1";
+      const bubble = isUser
+        ? `${bubbleBase} bg-indigo-500/15 ring-indigo-400/20 text-slate-100`
+        : `${bubbleBase} bg-white/8 ring-white/10 text-slate-100`;
+
+      const meta = new Date(m.ts || nowTs()).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+
+      // Simple markdown-ish: new lines + bullet
+      const safe = escapeHtml(m.content)
+        .replaceAll("\n", "<br/>")
+        .replaceAll("• ", "•&nbsp;");
+
+      return `
+        <div class="flex ${align} mb-3">
+          <div class="${bubble}">
+            ${safe}
+            <div class="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+              <span>${isUser ? "Vos" : "Asistente"} · ${meta}</span>
+              ${isAssistant ? `
+                <span class="flex items-center gap-2">
+                  <button class="copyBtn rounded-lg bg-white/5 px-2 py-1 ring-1 ring-white/10 hover:bg-white/10"
+                    data-copy="${escapeHtml(m.content)}">Copiar</button>
+                  <button class="fbBtn rounded-lg bg-white/5 px-2 py-1 ring-1 ring-white/10 hover:bg-white/10"
+                    data-fb="up">👍</button>
+                  <button class="fbBtn rounded-lg bg-white/5 px-2 py-1 ring-1 ring-white/10 hover:bg-white/10"
+                    data-fb="down">👎</button>
+                </span>
+              ` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addTyping() {
+      const typingId = "typingRow";
+      if (document.getElementById(typingId)) return;
+
+      const row = document.createElement("div");
+      row.id = typingId;
+      row.className = "flex justify-start mb-3";
+      row.innerHTML = `
+        <div class="max-w-[85%] rounded-3xl px-4 py-3 text-sm ring-1 bg-white/8 ring-white/10">
+          <div class="flex items-center gap-2 text-slate-300">
+            <span>Escribiendo</span>
+            <span class="inline-flex gap-1">
+              <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]"></span>
+              <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]"></span>
+              <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"></span>
+            </span>
+          </div>
+        </div>
+      `;
+      chatScroll.appendChild(row);
+      scrollToBottom();
+    }
+
+    function removeTyping() {
+      const el = document.getElementById("typingRow");
+      if (el) el.remove();
+    }
+
+    function setSources(sources) {
+      // sources puede ser array de strings o array de objetos {title, snippet, url}
+      if (!sources || (Array.isArray(sources) && sources.length === 0)) {
+        sourcesBox.innerHTML = `
+          <div class="rounded-2xl bg-white/5 p-3 text-xs text-slate-400 ring-1 ring-white/10">
+            Todavía no hay fuentes.
+          </div>
+        `;
+        return;
+      }
+
+      sourcesBox.innerHTML = sources.map((s) => {
+        if (typeof s === "string") {
+          return `
+            <div class="rounded-2xl bg-slate-900/40 p-3 text-xs text-slate-200 ring-1 ring-white/10">
+              ${escapeHtml(s)}
+            </div>
+          `;
+        }
+        const title = escapeHtml(s.title || "Fuente");
+        const snippet = escapeHtml(s.snippet || "");
+        const url = s.url ? String(s.url) : "";
+        return `
+          <div class="rounded-2xl bg-slate-900/40 p-3 ring-1 ring-white/10">
+            <div class="text-sm font-semibold text-slate-100">${title}</div>
+            ${snippet ? `<div class="mt-1 text-xs text-slate-300">${snippet}</div>` : ""}
+            ${url ? `<a class="mt-2 inline-block text-xs text-indigo-300 hover:text-indigo-200" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">Abrir</a>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function callApi(userText) {
+      // history: enviamos últimos N para contexto
+      const history = messages
+        .filter(m => m.role === "user" || m.role === "assistant")
+        .slice(-12)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const payload = { message: userText, history };
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} ${res.statusText} ${text}`.slice(0, 240));
+      }
+
+      // Esperado: { answer: "...", sources?: [...] }
+      const data = await res.json();
+      return data;
+    }
+
+    /***********************
+     * EVENTS
+     ***********************/
+    // Chips
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.className =
+        "chip rounded-full bg-white/10 px-3 py-2 text-sm ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99]";
+      btn.addEventListener("click", () => {
+        const q = btn.getAttribute("data-q") || "";
+        msgEl.value = q;
+        autoGrow(msgEl);
+        msgEl.focus();
+      });
+    });
+
+    // Textarea behavior
+    msgEl.addEventListener("input", () => {
+      autoGrow(msgEl);
+      charCount.textContent = String(msgEl.value.length);
+    });
+
+    msgEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+
+    // Submit
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = msgEl.value.trim();
+      if (!text) return;
+
+      msgEl.value = "";
+      autoGrow(msgEl);
+      charCount.textContent = "0";
+
+      messages.push({ role: "user", content: text, ts: nowTs() });
+      saveHistory();
+      render();
+
+      setStatus("loading", "Pensando…");
+      sendBtn.disabled = true;
+      addTyping();
+
+      try {
+        const data = await callApi(text);
+        removeTyping();
+
+        const answer = (data && (data.answer || data.response || data.text)) ? String(data.answer || data.response || data.text) : "No pude generar respuesta.";
+        lastAssistantText = answer;
+
+        messages.push({ role: "assistant", content: answer, ts: nowTs() });
+        saveHistory();
+        render();
+
+        // Fuentes
+        if (data && data.sources) setSources(data.sources);
+
+        setStatus("ready", "Listo");
+      } catch (err) {
+        removeTyping();
+        const msg = (err && err.message) ? err.message : String(err);
+
+        messages.push({
+          role: "assistant",
+          content: `Uy 😬 no pude conectar con el backend.\n\nDetalle: ${msg}\n\nTip: revisá API_URL, CORS, y que el endpoint acepte POST JSON.`,
+          ts: nowTs()
+        });
+        saveHistory();
+        render();
+        setStatus("error", "Error");
+      } finally {
+        sendBtn.disabled = false;
+        msgEl.focus();
+      }
+    });
+
+    // Delegated buttons inside bubbles
+    chatScroll.addEventListener("click", async (e) => {
+      const t = e.target;
+
+      if (t && t.classList.contains("copyBtn")) {
+        const toCopy = t.getAttribute("data-copy") || "";
+        try {
+          await navigator.clipboard.writeText(toCopy);
+          t.textContent = "Copiado";
+          setTimeout(() => (t.textContent = "Copiar"), 900);
+        } catch {}
+      }
+
+      if (t && t.classList.contains("fbBtn")) {
+        // placeholder: podrías mandar feedback al backend si querés
+        const kind = t.getAttribute("data-fb");
+        t.textContent = (kind === "up") ? "✅" : "📝";
+        setTimeout(() => (t.textContent = (kind === "up") ? "👍" : "👎"), 900);
+      }
+    });
+
+    // Reset
+    btnReset.addEventListener("click", () => {
+      localStorage.removeItem(LS_KEY);
+      messages = loadHistory();
+      setSources([]);
+      render();
+      setStatus("ready", "Listo");
+      msgEl.focus();
+    });
+
+    // Export (descarga un .txt)
+    btnExport.addEventListener("click", () => {
+      const content = messages.map(m => {
+        const who = m.role === "user" ? "VOS" : "ASISTENTE";
+        return `[${who}] ${m.content}\n`;
+      }).join("\n");
+
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "chat_pymes_aeroespacial.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // Copy last assistant
+    btnCopyLast.addEventListener("click", async () => {
+      if (!lastAssistantText) return;
+      try {
+        await navigator.clipboard.writeText(lastAssistantText);
+        btnCopyLast.textContent = "Copiado ✅";
+        setTimeout(() => (btnCopyLast.textContent = "Copiar última respuesta"), 900);
+      } catch {}
+    });
+
+    // Theme toggle (dark/light)
+    btnTheme.addEventListener("click", () => {
+      const html = document.documentElement;
+      const isDark = document.body.classList.contains("bg-slate-950");
+
+      if (isDark) {
+        document.body.classList.remove("bg-slate-950","text-slate-100");
+        document.body.classList.add("bg-slate-50","text-slate-900");
+        localStorage.setItem(LS_THEME, "light");
+      } else {
+        document.body.classList.remove("bg-slate-50","text-slate-900");
+        document.body.classList.add("bg-slate-950","text-slate-100");
+        localStorage.setItem(LS_THEME, "dark");
+      }
+    });
+
+    // Apply stored theme
+    (function initTheme() {
+      const t = localStorage.getItem(LS_THEME) || "dark";
+      if (t === "light") {
+        document.body.classList.remove("bg-slate-950","text-slate-100");
+        document.body.classList.add("bg-slate-50","text-slate-900");
+      }
+    })();
+
+    // Init
+    render();
+    msgEl.focus();
+  </script>
+</body>
+</html>
