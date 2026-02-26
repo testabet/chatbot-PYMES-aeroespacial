@@ -68,7 +68,7 @@ Copia la ruta del archivo db_importaciones_aeroespacial_2024.sql
 Entra al servidor poniendo tu contraseña
 
 # ejecuta:
-source TU_RUTA;
+source TU_RUTA
 ```
 
 ### 8. Cargar los Datos en la Base de Datos
