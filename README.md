@@ -1,7 +1,7 @@
 # Chatbot PYMES Aeroespacial
 
 ## Descripción
-Chatbot inteligente desarrollado para proporcionar soporte técnico y consultas a empresas PyMES en el sector aeroespacial, utilizando modelos de lenguaje avanzados y una base de datos optimizada.
+Chatbot desarrollado para brindar respuestas a empresas PyMES en el sector aeroespacial, utilizando datos provenientes del Atlas de Complejidad Económica (https://atlas.hks.harvard.edu/)
 
 ## Requisitos Previos
 - Python 3.8 o superior
