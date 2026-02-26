@@ -13,9 +13,9 @@ try:
     cursor = conn.cursor() 
    
      # Cargar desde archivo (si está habilitado en el servidor)
-    ruta_pais=r"C:/Users/Betina/Documents/Diplo soluciones de IA/chatbot-sector-aeroespacial/dataset2024/PAISES_SQL_2024_252.csv"
-    ruta_prod=r"C:/Users/Betina/Documents/Diplo soluciones de IA/chatbot-sector-aeroespacial/dataset2024/PRODUCTOS_SQL_2024_sintotal.csv"
-    ruta_imp= r"C:/Users/Betina/Documents/Diplo soluciones de IA/chatbot-sector-aeroespacial/dataset2024/IMPORTACIONES_SQL_2024.csv"
+    ruta_pais=r"dataset2024/PAISES_SQL_2024_252.csv"
+    ruta_prod=r"dataset2024/PRODUCTOS_SQL_2024_sintotal.csv"
+    ruta_imp= r"dataset2024/IMPORTACIONES_SQL_2024.csv"
 
     archivos= [ruta_pais,ruta_prod,ruta_imp]
     tablas=['paises','productos','importaciones']
