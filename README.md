@@ -58,19 +58,17 @@ Descarga los archivos CSV de la base de datos 2024 desde el siguiente enlace de 
 
 https://drive.google.com/drive/u/0/folders/1ZIFgCKua0kuRv_YWN80PxUbQR4RYZ1HF
 
-**Nota**: También está disponible la base de datos de 2023:
-https://drive.google.com/drive/folders/1ZCa32yqy8d9b9Ark6e0kgyuski-UWVky?usp=sharing
-
-Coloca los archivos descargados en una carpeta accesible del proyecto.
+Coloca los archivos descargados en una carpeta denominada **dataset2024** dentro del proyecto.
 
 ### 7. Crear la Base de Datos en MySQL
-```bash
-# Inicia sesión en MySQL
-mysql -u TU_USUARIO -p
+Copia la ruta del archivo db_importaciones_aeroespacial_2024.sql 
 
-# En la consola de MySQL, ejecuta:
-CREATE DATABASE chatbot_pymes;
-USE chatbot_pymes;
+```bash
+# Desde el Command Line Client de MySQL:
+Entra al servidor poniendo tu contraseña
+
+# ejecuta:
+source TU_RUTA;
 ```
 
 ### 8. Cargar los Datos en la Base de Datos
@@ -89,7 +87,7 @@ Ejecuta el servidor API:
 python api_server.py
 ```
 
-El servidor se iniciará y quedará escuchando las solicitudes (típicamente en `http://localhost:5000` o el puerto configurado).
+El servidor se iniciará y quedará escuchando las solicitudes (típicamente en `http://localhost:8000` o el puerto configurado).
 
 ### 10. Abrir el Frontend
 Abre el archivo `index.html` en tu navegador web preferido:
@@ -110,7 +108,6 @@ O simplemente navega hasta la ubicación del archivo `index.html` y haz doble cl
 ## Base de Datos
 
 - **2024**: https://drive.google.com/drive/u/0/folders/1ZIFgCKua0kuRv_YWN80PxUbQR4RYZ1HF
-- **2023**: https://drive.google.com/drive/folders/1ZCa32yqy8d9b9Ark6e0kgyuski-UWVky?usp=sharing
 
 ## API KEY Groq
 
