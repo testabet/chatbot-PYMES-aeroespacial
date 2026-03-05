@@ -84,7 +84,7 @@ Este script leerá los archivos CSV descargados y los cargará en la base de dat
 Ejecuta el servidor API:
 
 ```bash
-python api_server.py
+python main_prod_pais.py
 ```
 
 El servidor se iniciará y quedará escuchando las solicitudes (típicamente en `http://localhost:8000` o el puerto configurado).
