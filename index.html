@@ -23,6 +23,39 @@
     <div class="absolute -bottom-40 right-10 h-[520px] w-[520px] rounded-full bg-emerald-500/15 blur-[120px]"></div>
   </div>
 
+  <!-- LOGIN OVERLAY (fake) -->
+  <div id="loginOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 px-4">
+    <div class="w-full max-w-md rounded-3xl bg-slate-900/80 p-6 ring-1 ring-white/10 backdrop-blur">
+      <div class="flex items-center gap-3">
+        <div class="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+          <span class="text-xl">🔐</span>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Iniciar sesión</h2>
+        </div>
+      </div>
+
+      <div class="mt-5 grid gap-3">
+        <input id="loginUser"
+          class="w-full rounded-2xl bg-slate-950/40 px-4 py-3 text-sm ring-1 ring-white/10 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+          placeholder="Usuario (ej: demo@aero)" autocomplete="username" />
+        <input id="loginPass" type="password"
+          class="w-full rounded-2xl bg-slate-950/40 px-4 py-3 text-sm ring-1 ring-white/10 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+          placeholder="Contraseña (ej: Aero123!)" autocomplete="current-password" />
+        <div id="loginError" class="hidden text-sm text-rose-300"></div>
+
+        <button id="btnLogin"
+          class="mt-1 inline-flex h-12 items-center justify-center rounded-2xl bg-indigo-500 px-4 font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-400 active:scale-[0.99]">
+          Entrar
+        </button>
+
+        <div class="text-xs text-slate-400">
+          Demo: <b>demo@aero</b> · <b>Aero123!</b>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="relative mx-auto max-w-6xl px-4 py-6">
     <!-- Top bar -->
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -45,6 +78,10 @@
         <button id="btnExport"
           class="rounded-xl bg-white/10 px-3 py-2 text-sm font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/15">
           Exportar chat
+        </button>
+        <button id="btnLogout"
+          class="rounded-xl bg-white/10 px-3 py-2 text-sm font-medium text-slate-100 ring-1 ring-white/10 hover:bg-white/15">
+          Salir
         </button>
         <span id="statusPill"
           class="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm ring-1 ring-emerald-400/20">
@@ -154,14 +191,15 @@
     /***********************
      * CONFIG
      ***********************/
-    // Cambiá esto por tu endpoint real:
-    // - local: "http://127.0.0.1:8000/api/chat"
-    // - prod:  "https://tu-dominio.com/api/chat"
-    const API_URL = "http://127.0.0.1:8000/api/chat";
+    // Base del backend (cambiá si hace falta)
+    const API_BASE = "http://127.0.0.1:8000";
+    const API_URL = API_BASE + "/api/chat";
+    const LOGIN_URL = API_BASE + "/api/login";
 
     // Storage keys
     const LS_KEY = "pymes_chat_history_v1";
     const LS_THEME = "pymes_chat_theme_v1";
+    const LS_TOKEN = "pymes_aero_token_v1";
 
     /***********************
      * DOM
@@ -179,6 +217,13 @@
     const btnExport = document.getElementById("btnExport");
     const btnCopyLast = document.getElementById("btnCopyLast");
     const btnTheme = document.getElementById("btnTheme");
+    const btnLogout = document.getElementById("btnLogout");
+
+    const loginOverlay = document.getElementById("loginOverlay");
+    const loginUser = document.getElementById("loginUser");
+    const loginPass = document.getElementById("loginPass");
+    const loginError = document.getElementById("loginError");
+    const btnLogin = document.getElementById("btnLogin");
 
     apiInfo.textContent = API_URL;
 
@@ -187,6 +232,79 @@
      ***********************/
     let messages = loadHistory(); // [{role:'user'|'assistant'|'system', content:string, ts:number}]
     let lastAssistantText = "";
+
+    /***********************
+     * AUTH
+     ***********************/
+    function getToken() { return localStorage.getItem(LS_TOKEN); }
+    function setToken(t) { localStorage.setItem(LS_TOKEN, t); }
+    function clearToken() { localStorage.removeItem(LS_TOKEN); }
+
+    function showLogin() {
+      loginOverlay.classList.remove("hidden");
+      loginOverlay.classList.add("flex");
+      setStatus("error", "Login requerido");
+      setUiDisabled(true);
+      setTimeout(() => loginUser.focus(), 50);
+    }
+
+    function hideLogin() {
+      loginOverlay.classList.add("hidden");
+      loginOverlay.classList.remove("flex");
+      setUiDisabled(false);
+      setStatus("ready", "Listo");
+      setTimeout(() => msgEl.focus(), 50);
+    }
+
+    function ensureAuthOrShowLogin() {
+      if (!getToken()) showLogin();
+      else hideLogin();
+    }
+
+    async function doLogin() {
+      loginError.classList.add("hidden");
+      loginError.textContent = "";
+
+      const username = (loginUser.value || "").trim();
+      const password = loginPass.value || "";
+
+      try {
+        const res = await fetch(LOGIN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({ detail: "Credenciales inválidas" }));
+          throw new Error(e.detail || "Credenciales inválidas");
+        }
+
+        const data = await res.json();
+        if (!data || !data.token) throw new Error("Login OK pero sin token");
+
+        setToken(String(data.token));
+        hideLogin();
+      } catch (e) {
+        loginError.textContent = e.message || String(e);
+        loginError.classList.remove("hidden");
+      }
+    }
+
+    function logout() {
+      clearToken();
+      showLogin();
+    }
+
+    function setUiDisabled(disabled) {
+      // deshabilita envío mientras no haya login (igual el overlay tapa, pero por prolijidad)
+      sendBtn.disabled = disabled;
+      msgEl.disabled = disabled;
+      btnReset.disabled = disabled;
+      btnExport.disabled = disabled;
+      btnCopyLast.disabled = disabled;
+      btnTheme.disabled = disabled;
+    }
 
     /***********************
      * UTIL
@@ -217,7 +335,7 @@
     }
 
     function escapeHtml(str) {
-      return str
+      return String(str)
         .replaceAll("&","&amp;")
         .replaceAll("<","&lt;")
         .replaceAll(">","&gt;")
@@ -276,7 +394,6 @@
 
       const meta = new Date(m.ts || nowTs()).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
-      // Simple markdown-ish: new lines + bullet
       const safe = escapeHtml(m.content)
         .replaceAll("\n", "<br/>")
         .replaceAll("• ", "•&nbsp;");
@@ -332,7 +449,6 @@
     }
 
     function setSources(sources) {
-      // sources puede ser array de strings o array de objetos {title, snippet, url}
       if (!sources || (Array.isArray(sources) && sources.length === 0)) {
         sourcesBox.innerHTML = `
           <div class="rounded-2xl bg-white/5 p-3 text-xs text-slate-400 ring-1 ring-white/10">
@@ -364,7 +480,6 @@
     }
 
     async function callApi(userText) {
-      // history: enviamos últimos N para contexto
       const history = messages
         .filter(m => m.role === "user" || m.role === "assistant")
         .slice(-12)
@@ -372,20 +487,29 @@
 
       const payload = { message: userText, history };
 
+      const token = getToken();
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = "Bearer " + token;
+
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload)
       });
+
+      if (res.status === 401) {
+        clearToken();
+        showLogin();
+        const text = await res.text().catch(() => "");
+        throw new Error(("Sesión inválida (demo). Volvé a iniciar sesión. " + text).slice(0, 240));
+      }
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         throw new Error(`HTTP ${res.status} ${res.statusText} ${text}`.slice(0, 240));
       }
 
-      // Esperado: { answer: "...", sources?: [...] }
-      const data = await res.json();
-      return data;
+      return await res.json();
     }
 
     /***********************
@@ -419,6 +543,13 @@
     // Submit
     chatForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+
+      // si no hay token, pedimos login
+      if (!getToken()) {
+        showLogin();
+        return;
+      }
+
       const text = msgEl.value.trim();
       if (!text) return;
 
@@ -438,14 +569,16 @@
         const data = await callApi(text);
         removeTyping();
 
-        const answer = (data && (data.answer || data.response || data.text)) ? String(data.answer || data.response || data.text) : "No pude generar respuesta.";
+        const answer = (data && (data.answer || data.response || data.text))
+          ? String(data.answer || data.response || data.text)
+          : "No pude generar respuesta.";
+
         lastAssistantText = answer;
 
         messages.push({ role: "assistant", content: answer, ts: nowTs() });
         saveHistory();
         render();
 
-        // Fuentes
         if (data && data.sources) setSources(data.sources);
 
         setStatus("ready", "Listo");
@@ -455,7 +588,7 @@
 
         messages.push({
           role: "assistant",
-          content: `Uy 😬 no pude conectar con el backend.\n\nDetalle: ${msg}\n\nTip: revisá API_URL, CORS, y que el endpoint acepte POST JSON.`,
+          content: `Uy 😬 no pude conectar con el backend.\n\nDetalle: ${msg}\n\nTip: revisá API_BASE/API_URL, CORS, y que el endpoint acepte POST JSON + Authorization.`,
           ts: nowTs()
         });
         saveHistory();
@@ -481,7 +614,6 @@
       }
 
       if (t && t.classList.contains("fbBtn")) {
-        // placeholder: podrías mandar feedback al backend si querés
         const kind = t.getAttribute("data-fb");
         t.textContent = (kind === "up") ? "✅" : "📝";
         setTimeout(() => (t.textContent = (kind === "up") ? "👍" : "👎"), 900);
@@ -528,7 +660,6 @@
 
     // Theme toggle (dark/light)
     btnTheme.addEventListener("click", () => {
-      const html = document.documentElement;
       const isDark = document.body.classList.contains("bg-slate-950");
 
       if (isDark) {
@@ -551,8 +682,18 @@
       }
     })();
 
+    // Login events
+    btnLogin.addEventListener("click", doLogin);
+    loginPass.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
+    });
+
+    // Logout
+    btnLogout.addEventListener("click", logout);
+
     // Init
     render();
+    ensureAuthOrShowLogin();
     msgEl.focus();
   </script>
 </body>
